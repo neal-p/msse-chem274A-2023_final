@@ -11,11 +11,7 @@ extern "C" {
 #include <memory>
 #include <stdexcept>
 #include <utility>
-
-#define N 5
-#define LDA N
-#define LDVL N
-#define LDVR N
+#include <vector>
 
 enum Method { NAIVE, BLAS };
 
@@ -39,7 +35,7 @@ class Matrix {
   Matrix(const Matrix<T>& m)
       : x_size_(m.x_size_), y_size_(m.y_size_), size_(m.size_) {
     a_ = std::make_unique<T[]>(size_);
-    memcpy(a_.get(), m.a_.get(), sizeof(int) * (size_));
+    memcpy(a_.get(), m.a_.get(), sizeof(T) * (size_));
   }
 
   void setMethod(Method method) { method_ = method; }
@@ -236,8 +232,10 @@ class Matrix {
     int m = y_size_;
     int n = mat.x_size_;
     int k = x_size_;
-    U* A = a_.get();
-    U* B = mat.a_.get();
+    U* A = new U[size_];
+    memcpy(A, a_.get(), sizeof(U) * size_);
+    U* B = new U[mat.size_];
+    memcpy(B, mat.a_.get(), sizeof(U) * mat.size_);
     U* C = prod.a_.get();
 
     if constexpr (std::is_same_v<U, float>) {
@@ -267,6 +265,9 @@ class Matrix {
     } else {
       throw std::runtime_error("unsupported BLAS type");
     }
+
+    delete[] A;
+    delete[] B;
     return prod;
   }
 
@@ -310,7 +311,8 @@ class Matrix {
     int ldvl = x_size_;
     int ldvr = x_size_;
 
-    U* A = a_.get();
+    U* A = new U[size_];
+    memcpy(A, a_.get(), sizeof(U) * size_);
 
     int info;
 
@@ -333,109 +335,16 @@ class Matrix {
       ev(idx) = std::complex<U>(wr[idx], wi[idx]);
     }
 
+    delete[] A;
     delete[] wr;
     delete[] wi;
 
     return ev;
   }
 
-  // template <typename U = T>
-  // Matrix<U> eigenvectors() {
-  //   // Matrix<U> ev(1, x_size_);
-
-  //   U* wr = new U[x_size_];
-  //   U* wi = new U[x_size_];
-
-  //   // U* vl = new U[x_size_ * x_size_];
-  //   // U* vr = new U[x_size_ * x_size_];
-
-  //   U vl[x_size_ * x_size_];
-  //   U vr[x_size_ * x_size_];
-
-  //   int n = x_size_;
-  //   int lda = x_size_;
-  //   int ldvl = x_size_;
-  //   int ldvr = x_size_;
-
-  //   U* A = a_.get();
-
-  //   int info;
-
-  //   if constexpr (std::is_same_v<U, float>) {
-  //     info = LAPACKE_sgeev(LAPACK_ROW_MAJOR, 'V', 'V', n, A, lda, wr, wi, vl,
-  //                          ldvl, vr, ldvr);
-  //   } else if constexpr (std::is_same_v<U, double>) {
-  //     std::cout << "Using right one" << std::endl;
-  //     info = LAPACKE_dgeev(LAPACK_ROW_MAJOR, 'V', 'V', n, A, lda, wr, wi, vl,
-  //                          ldvl, vr, ldvr);
-  //   } else {
-  //     throw std::runtime_error("unsupported BLAS type");
-  //   }
-
-  //   if (info != 0) {
-  //     throw std::runtime_error("could not compute eigenvalues for matrix");
-  //   }
-
-  //   for (int i = 0; i < n; i++) {
-  //     int j = 0;
-  //     while (j < n) {
-  //       if (wi[j] == (U)0.0) {
-  //         printf(" %6.2f", vl[i * ldvl + j]);
-  //         j++;
-  //       } else {
-  //         printf(" (%6.2f,%6.2f)", vl[i * ldvl + j], vl[i * ldvl + (j + 1)]);
-  //         printf(" (%6.2f,%6.2f)", vl[i * ldvl + j], -vl[i * ldvl + (j +
-  //         1)]); j += 2;
-  //       }
-  //     }
-  //     printf("\n");
-  //   }
-
-  //   delete[] wr;
-  //   delete[] wi;
-  //   // delete[] vl;
-
-  //   // return ev;
-  // }
-
-  void eigenvectors() {
-    /* Locals */
-    int n = N, lda = LDA, ldvl = LDVL, ldvr = LDVR, info;
-    /* Local arrays */
-    double wr[N], wi[N], vl[LDVL * N], vr[LDVR * N];
-    double a[LDA * N] = {-1.01, 0.86,  -4.60, 3.31,  -4.81, 3.98,  0.53,
-                         -7.04, 5.29,  3.55,  3.30,  8.26,  -3.89, 8.20,
-                         -1.51, 4.43,  4.96,  -7.66, -7.33, 6.18,  7.31,
-                         -6.43, -6.16, 2.47,  5.58};
-    /* Executable statements */
-    printf("LAPACKE_dgeev (row-major, high-level) Example Program Results\n");
-    /* Solve eigenproblem */
-    info = LAPACKE_dgeev(LAPACK_ROW_MAJOR, 'V', 'V', n, a, lda, wr, wi, vl,
-                         ldvl, vr, ldvr);
-    /* Check for convergence */
-    if (info > 0) {
-      throw std::runtime_error("could not compute eigenvalues for matrix");
-    }
-
-    for (int i = 0; i < n; i++) {
-      int j = 0;
-      while (j < n) {
-        if (wi[j] == (double)0.0) {
-          printf(" %6.2f", vl[i * ldvl + j]);
-          j++;
-        } else {
-          printf(" (%6.2f,%6.2f)", vl[i * ldvl + j], vl[i * ldvl + (j + 1)]);
-          printf(" (%6.2f,%6.2f)", vl[i * ldvl + j], -vl[i * ldvl + (j + 1)]);
-          j += 2;
-        }
-      }
-      printf("\n");
-    }
-  }
-
   template <typename U = T>
-  Matrix<U> reigenvectors() {
-    Matrix<U> ev(x_size_, x_size_);
+  Matrix<std::complex<U>> reigenvectors() {
+    Matrix<std::complex<U>> ev(x_size_, x_size_);
 
     U* wr = new U[x_size_];
     U* wi = new U[x_size_];
@@ -448,7 +357,138 @@ class Matrix {
     int ldvl = x_size_;
     int ldvr = x_size_;
 
-    U* A = a_.get();
+    U* A = new U[size_];
+    memcpy(A, a_.get(), sizeof(U) * size_);
+
+    int info;
+
+    if constexpr (std::is_same_v<U, float>) {
+      info = LAPACKE_sgeev(LAPACK_ROW_MAJOR, 'N', 'V', n, A, lda, wr, wi, vl,
+                           ldvl, vr, ldvr);
+    } else if constexpr (std::is_same_v<U, double>) {
+      info = LAPACKE_dgeev(LAPACK_ROW_MAJOR, 'N', 'V', n, A, lda, wr, wi, vl,
+                           ldvl, vr, ldvr);
+    } else {
+      throw std::runtime_error("unsupported BLAS type");
+    }
+
+    if (info != 0) {
+      throw std::runtime_error("could not compute eigenvalues for matrix");
+    }
+
+    // Real and Complex components are contiguous in memory
+    // must check eigenvalue to see if complex
+    // see https://www.intel.com/content/www/us/en/docs/onemkl/code-samples-lapack/2022-1/lapacke-dgeev-example-c-row.html
+    int idx = 0;
+    for (int i=0; i < x_size_; i++) {
+        int j = 0;
+        while (j < x_size_) {
+            if (wi[j] == (U)0.0 ) {
+                ev(idx) = std::complex<U>(vr[i * ldvr + j], 0.0);
+                idx++;
+                j++;
+            } else {
+                ev(idx) = std::complex<U>(vr[i * ldvr+j], vr[i*ldvr+(j+1)]);
+                idx++;
+                ev(idx) = std::complex<U>(vr[i * ldvr+j], -vr[i*ldvr+(j+1)]);
+                idx++;
+                j += 2;
+            }
+        }
+    }
+
+    delete[] A;
+    delete[] wr;
+    delete[] wi;
+    delete[] vr;
+
+    return ev;
+  }
+
+  template <typename U = T>
+  Matrix<std::complex<U>> leigenvectors() {
+    Matrix<std::complex<U>> ev(x_size_, x_size_);
+
+    U* wr = new U[x_size_];
+    U* wi = new U[x_size_];
+
+    U* vl = new U[x_size_ * x_size_];
+    U* vr = nullptr;
+
+    int n = x_size_;
+    int lda = x_size_;
+    int ldvl = x_size_;
+    int ldvr = x_size_;
+
+    U* A = new U[size_];
+    memcpy(A, a_.get(), sizeof(U) * size_);
+
+    int info;
+
+    if constexpr (std::is_same_v<U, float>) {
+      info = LAPACKE_sgeev(LAPACK_ROW_MAJOR, 'V', 'N', n, A, lda, wr, wi, vl,
+                           ldvl, vr, ldvr);
+    } else if constexpr (std::is_same_v<U, double>) {
+      info = LAPACKE_dgeev(LAPACK_ROW_MAJOR, 'V', 'N', n, A, lda, wr, wi, vl,
+                           ldvl, vr, ldvr);
+    } else {
+      throw std::runtime_error("unsupported BLAS type");
+    }
+
+    if (info != 0) {
+      throw std::runtime_error("could not compute eigenvalues for matrix");
+    }
+
+    // Real and Complex components are contiguous in memory
+    // must check eigenvalue to see if complex
+    // see https://www.intel.com/content/www/us/en/docs/onemkl/code-samples-lapack/2022-1/lapacke-dgeev-example-c-row.html
+    int idx = 0;
+    for (int i=0; i < x_size_; i++) {
+        int j = 0;
+        while (j < x_size_) {
+            if (wi[j] == (U)0.0 ) {
+                ev(idx) = std::complex<U>(vl[i * ldvl + j], 0.0);
+                idx++;
+                j++;
+            } else {
+                ev(idx) = std::complex<U>(vl[i * ldvl+j], vl[i*ldvl+(j+1)]);
+                idx++;
+                ev(idx) = std::complex<U>(vl[i * ldvl+j], -vl[i*ldvl+(j+1)]);
+                idx++;
+                j += 2;
+            }
+        }
+    }
+
+    delete[] A;
+    delete[] wr;
+    delete[] wi;
+    delete[] vl;
+
+    return ev;
+  }
+
+
+  template <typename U = T>
+  std::vector<Matrix<std::complex<U>>> alleigen() {
+
+    Matrix<std::complex<U>> ev(1, x_size_);
+    Matrix<std::complex<U>> lev(x_size_, x_size_);
+    Matrix<std::complex<U>> rev(x_size_, x_size_);
+
+    U* wr = new U[x_size_];
+    U* wi = new U[x_size_];
+
+    U* vl = new U[x_size_ * x_size_];
+    U* vr = new U[x_size_ * x_size_];
+
+    int n = x_size_;
+    int lda = x_size_;
+    int ldvl = x_size_;
+    int ldvr = x_size_;
+
+    U* A = new U[size_];
+    memcpy(A, a_.get(), sizeof(U) * size_);
 
     int info;
 
@@ -466,23 +506,73 @@ class Matrix {
       throw std::runtime_error("could not compute eigenvalues for matrix");
     }
 
-    // Display the eigenvectors
-    printf("Eigenvectors:\n");
-    for (int i = 0; i < n; i++) {
-      printf("Eigenvector %d:\n", i + 1);
-      for (int j = 0; j < n; j++) {
-        printf("%f ", vr[i * n + j]);
-      }
-      printf("\n");
+    for (int idx = 0; idx < x_size_; idx++) {
+        std::cout << "Wr: " << wr[idx] << " Wi: " << wi[idx] << " -> " << std::complex<U>(wr[idx], wi[idx]) << std::endl;
     }
 
+    // combine real and imaginary components
+    for (int idx = 0; idx < x_size_; idx++) {
+      ev(idx) = std::complex<U>(wr[idx], wi[idx]);
+    }
+
+        std::cout << "print ev" << std::endl;
+        ev.print();
+
+
+    // Real and Complex components are contiguous in memory
+    // must check eigenvalue to see if complex
+    // see https://www.intel.com/content/www/us/en/docs/onemkl/code-samples-lapack/2022-1/lapacke-dgelev-example-c-row.html
+    int idx = 0;
+    for (int i=0; i < x_size_; i++) {
+        int j = 0;
+        while (j < x_size_) {
+            if (wi[j] == (U)0.0 ) {
+                lev(idx) = std::complex<U>(vl[i * ldvl + j], 0.0);
+                idx++;
+                j++;
+            } else {
+                lev(idx) = std::complex<U>(vl[i * ldvl+j], vl[i*ldvl+(j+1)]);
+                idx++;
+                lev(idx) = std::complex<U>(vl[i * ldvl+j], -vl[i*ldvl+(j+1)]);
+                idx++;
+                j += 2;
+            }
+        }
+    }
+
+    idx = 0;
+    for (int i=0; i < x_size_; i++) {
+        int j = 0;
+        while (j < x_size_) {
+            if (wi[j] == (U)0.0 ) {
+                rev(idx) = std::complex<U>(vr[i * ldvr + j], 0.0);
+                idx++;
+                j++;
+            } else {
+                rev(idx) = std::complex<U>(vr[i * ldvr+j], vr[i*ldvr+(j+1)]);
+                idx++;
+                rev(idx) = std::complex<U>(vr[i * ldvr+j], -vr[i*ldvr+(j+1)]);
+                idx++;
+                j += 2;
+            }
+        }
+    }
+
+    delete[] A;
     delete[] wr;
     delete[] wi;
     delete[] vl;
+    delete[] vr;
 
-    return ev;
+        std::cout << "print ev after others" << std::endl;
+        ev.print();
+
+    return std::vector<Matrix<std::complex<U>>> {ev, lev, rev};
   }
+
+
 };
+
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const Matrix<T>& m) {

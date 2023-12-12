@@ -107,28 +107,14 @@ int main() {
   symm3.print();
 
   std::cout << "eigenvalues" << std::endl;
+  std::cout << std::endl;
+
   symm3.eigenvalues().print();
 
-  std::cout << std::endl << "l eigen vectors: " << std::endl;
-  symm3.leigenvectors().print();
-
-  std::cout << std::endl << "r eigen vectors: " << std::endl;
-  symm3.reigenvectors().print();
-
-  std::cout << "from alleigen" << std::endl << std::endl;
-
-  auto eigens = symm3.alleigen();
-
-  std::cout << "eigenvalues: " << std::endl;
-  eigens[0].print();
-  std::cout << std::endl << "l eigen vectors: " << std::endl;
-  eigens[1].print();
-  std::cout << std::endl << "r eigen vectors: " << std::endl;
-  eigens[2].print();
-
+  std::cout << "eigenvectors" << std::endl;
   std::cout << std::endl;
-  std::cout << "oriignal array: " << std::endl;
-  symm3.print();
+
+  symm3.eigenvectors();
 
   return 0;
 }

@@ -25,8 +25,78 @@ class Matrix {
   int size_;
   Method method_;
 
+  Matrix<T> multiplyNaive(const Matrix<T>& mat) const {
+    if (x_size_ != mat.y_size_) {
+      throw std::runtime_error("Matrices are incompatible, cannot multiply");
+    }
+
+    Matrix<T> prod(y_size_, mat.x_size_);
+
+    int idx = 0;
+
+    for (int lrow = 0; lrow < y_size_; lrow++) {
+      for (int rcol = 0; rcol < mat.x_size_; rcol++) {
+        T sum = 0;
+
+        for (int i = 0; i < x_size_; i++) {
+          sum += at(lrow, i) * mat(i, rcol);
+        }
+
+        prod(idx) = sum;
+        idx++;
+      }
+    }
+    return prod;
+  }
+
+  template <typename U = T>
+  Matrix<U> multiplyBlas(const Matrix<U>& mat) const {
+    Matrix<U> prod(y_size_, mat.x_size_);
+
+    int m = y_size_;
+    int n = mat.x_size_;
+    int k = x_size_;
+    U* A = new U[size_];
+    memcpy(A, a_.get(), sizeof(U) * size_);
+    U* B = new U[mat.size_];
+    memcpy(B, mat.a_.get(), sizeof(U) * mat.size_);
+    U* C = prod.a_.get();
+
+    if constexpr (std::is_same_v<U, float>) {
+      U i(1.0);
+      U j(0.0);
+
+      cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, i, A, k,
+                  B, n, j, C, n);
+    } else if constexpr (std::is_same_v<U, double>) {
+      U i(1.0);
+      U j(0.0);
+
+      cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, i, A, k,
+                  B, n, j, C, n);
+    } else if constexpr (std::is_same_v<U, std::complex<float>>) {
+      U i(1.0, 0.0);
+      U j(0.0, 0.0);
+
+      cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, i, A, k,
+                  B, n, j, C, n);
+    } else if constexpr (std::is_same_v<U, std::complex<double>>) {
+      U i(1.0, 0.0);
+      U j(0.0, 0.0);
+
+      cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, i, A, k,
+                  B, n, j, C, n);
+    } else {
+      throw std::runtime_error("unsupported BLAS type");
+    }
+
+    delete[] A;
+    delete[] B;
+    return prod;
+  }
+
  public:
-  Matrix() {}
+  Matrix() : x_size_(0), y_size_(0), size_(0), a_(nullptr) {}
   Matrix(const int rows, const int cols)
       : x_size_(cols), y_size_(rows), size_(rows * cols), method_(BLAS) {
     a_ = std::make_unique<T[]>(x_size_ * y_size_);
@@ -38,6 +108,16 @@ class Matrix {
     memcpy(a_.get(), m.a_.get(), sizeof(T) * (size_));
   }
 
+  void operator=(const Matrix<T>& m) {
+    std::unique_ptr<T[]> new_a = std::make_unique<T[]>(m.size_);
+    memcpy(a_.get(), m.a_.get(), sizeof(T) * (m.size_));
+
+    a_ = std::move(new_a);
+    x_size_ = m.x_size_;
+    y_size_ = m.y_size_;
+    size_ = m.size_;
+  }
+
   void setMethod(Method method) { method_ = method; }
   Method getMethod() const { return method_; }
 
@@ -47,7 +127,7 @@ class Matrix {
 
     // Copy what elements do fit into the new array
     int to_copy = std::min(new_size, size_);
-    memcpy(new_a.get(), a_.get(), sizeof(int) * to_copy);
+    memcpy(new_a.get(), a_.get(), sizeof(T) * to_copy);
 
     a_ = std::move(new_a);
     x_size_ = cols;
@@ -199,78 +279,6 @@ class Matrix {
     return prod;
   }
 
-  Matrix<T> multiplyNaive(const Matrix<T>& mat) const {
-    if (x_size_ != mat.y_size_) {
-      throw std::runtime_error("Matrices are incompatible, cannot multiply");
-    }
-
-    Matrix<T> prod(y_size_, mat.x_size_);
-
-    std::cout << "using Naive" << std::endl;
-    int idx = 0;
-
-    for (int lrow = 0; lrow < y_size_; lrow++) {
-      for (int rcol = 0; rcol < mat.x_size_; rcol++) {
-        T sum = 0;
-
-        for (int i = 0; i < x_size_; i++) {
-          sum += at(lrow, i) * mat(i, rcol);
-        }
-
-        prod(idx) = sum;
-        idx++;
-      }
-    }
-    return prod;
-  }
-
-  template <typename U = T>
-  Matrix<U> multiplyBlas(const Matrix<U>& mat) const {
-    Matrix<U> prod(y_size_, mat.x_size_);
-
-    std::cout << "Using BLAS" << std::endl;
-    int m = y_size_;
-    int n = mat.x_size_;
-    int k = x_size_;
-    U* A = new U[size_];
-    memcpy(A, a_.get(), sizeof(U) * size_);
-    U* B = new U[mat.size_];
-    memcpy(B, mat.a_.get(), sizeof(U) * mat.size_);
-    U* C = prod.a_.get();
-
-    if constexpr (std::is_same_v<U, float>) {
-      U i(1.0);
-      U j(0.0);
-
-      cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, i, A, k,
-                  B, n, j, C, n);
-    } else if constexpr (std::is_same_v<U, double>) {
-      U i(1.0);
-      U j(0.0);
-
-      cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, i, A, k,
-                  B, n, j, C, n);
-    } else if constexpr (std::is_same_v<U, std::complex<float>>) {
-      U i(1.0, 0.0);
-      U j(0.0, 0.0);
-
-      cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, i, A, k,
-                  B, n, j, C, n);
-    } else if constexpr (std::is_same_v<U, std::complex<double>>) {
-      U i(1.0, 0.0);
-      U j(0.0, 0.0);
-
-      cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, i, A, k,
-                  B, n, j, C, n);
-    } else {
-      throw std::runtime_error("unsupported BLAS type");
-    }
-
-    delete[] A;
-    delete[] B;
-    return prod;
-  }
-
   Matrix<T> operator*(const Matrix<T>& mat) const {
     if (x_size_ != mat.y_size_) {
       throw std::runtime_error("Matrices are incompatible, cannot multiply");
@@ -294,6 +302,17 @@ class Matrix {
     }
 
     return prod;
+  }
+
+  bool operator==(const Matrix<T>& mat) const {
+    // check low-cost first before the O(N) every-element check
+    if (x_size_ != mat.x_size_) {
+      return false;
+    } else if (y_size_ != mat.y_size) {
+      return false;
+    }
+
+    return std::equal(a_, a_ + size_, mat.a_);
   }
 
   template <typename U = T>
@@ -378,23 +397,24 @@ class Matrix {
 
     // Real and Complex components are contiguous in memory
     // must check eigenvalue to see if complex
-    // see https://www.intel.com/content/www/us/en/docs/onemkl/code-samples-lapack/2022-1/lapacke-dgeev-example-c-row.html
+    // see
+    // https://www.intel.com/content/www/us/en/docs/onemkl/code-samples-lapack/2022-1/lapacke-dgeev-example-c-row.html
     int idx = 0;
-    for (int i=0; i < x_size_; i++) {
-        int j = 0;
-        while (j < x_size_) {
-            if (wi[j] == (U)0.0 ) {
-                ev(idx) = std::complex<U>(vr[i * ldvr + j], 0.0);
-                idx++;
-                j++;
-            } else {
-                ev(idx) = std::complex<U>(vr[i * ldvr+j], vr[i*ldvr+(j+1)]);
-                idx++;
-                ev(idx) = std::complex<U>(vr[i * ldvr+j], -vr[i*ldvr+(j+1)]);
-                idx++;
-                j += 2;
-            }
+    for (int i = 0; i < x_size_; i++) {
+      int j = 0;
+      while (j < x_size_) {
+        if (wi[j] == (U)0.0) {
+          ev(idx) = std::complex<U>(vr[i * ldvr + j], 0.0);
+          idx++;
+          j++;
+        } else {
+          ev(idx) = std::complex<U>(vr[i * ldvr + j], vr[i * ldvr + (j + 1)]);
+          idx++;
+          ev(idx) = std::complex<U>(vr[i * ldvr + j], -vr[i * ldvr + (j + 1)]);
+          idx++;
+          j += 2;
         }
+      }
     }
 
     delete[] A;
@@ -441,23 +461,24 @@ class Matrix {
 
     // Real and Complex components are contiguous in memory
     // must check eigenvalue to see if complex
-    // see https://www.intel.com/content/www/us/en/docs/onemkl/code-samples-lapack/2022-1/lapacke-dgeev-example-c-row.html
+    // see
+    // https://www.intel.com/content/www/us/en/docs/onemkl/code-samples-lapack/2022-1/lapacke-dgeev-example-c-row.html
     int idx = 0;
-    for (int i=0; i < x_size_; i++) {
-        int j = 0;
-        while (j < x_size_) {
-            if (wi[j] == (U)0.0 ) {
-                ev(idx) = std::complex<U>(vl[i * ldvl + j], 0.0);
-                idx++;
-                j++;
-            } else {
-                ev(idx) = std::complex<U>(vl[i * ldvl+j], vl[i*ldvl+(j+1)]);
-                idx++;
-                ev(idx) = std::complex<U>(vl[i * ldvl+j], -vl[i*ldvl+(j+1)]);
-                idx++;
-                j += 2;
-            }
+    for (int i = 0; i < x_size_; i++) {
+      int j = 0;
+      while (j < x_size_) {
+        if (wi[j] == (U)0.0) {
+          ev(idx) = std::complex<U>(vl[i * ldvl + j], 0.0);
+          idx++;
+          j++;
+        } else {
+          ev(idx) = std::complex<U>(vl[i * ldvl + j], vl[i * ldvl + (j + 1)]);
+          idx++;
+          ev(idx) = std::complex<U>(vl[i * ldvl + j], -vl[i * ldvl + (j + 1)]);
+          idx++;
+          j += 2;
         }
+      }
     }
 
     delete[] A;
@@ -468,10 +489,8 @@ class Matrix {
     return ev;
   }
 
-
   template <typename U = T>
   std::vector<Matrix<std::complex<U>>> alleigen() {
-
     Matrix<std::complex<U>> ev(1, x_size_);
     Matrix<std::complex<U>> lev(x_size_, x_size_);
     Matrix<std::complex<U>> rev(x_size_, x_size_);
@@ -507,7 +526,8 @@ class Matrix {
     }
 
     for (int idx = 0; idx < x_size_; idx++) {
-        std::cout << "Wr: " << wr[idx] << " Wi: " << wi[idx] << " -> " << std::complex<U>(wr[idx], wi[idx]) << std::endl;
+      std::cout << "Wr: " << wr[idx] << " Wi: " << wi[idx] << " -> "
+                << std::complex<U>(wr[idx], wi[idx]) << std::endl;
     }
 
     // combine real and imaginary components
@@ -515,47 +535,47 @@ class Matrix {
       ev(idx) = std::complex<U>(wr[idx], wi[idx]);
     }
 
-        std::cout << "print ev" << std::endl;
-        ev.print();
-
+    std::cout << "print ev" << std::endl;
+    ev.print();
 
     // Real and Complex components are contiguous in memory
     // must check eigenvalue to see if complex
-    // see https://www.intel.com/content/www/us/en/docs/onemkl/code-samples-lapack/2022-1/lapacke-dgelev-example-c-row.html
+    // see
+    // https://www.intel.com/content/www/us/en/docs/onemkl/code-samples-lapack/2022-1/lapacke-dgelev-example-c-row.html
     int idx = 0;
-    for (int i=0; i < x_size_; i++) {
-        int j = 0;
-        while (j < x_size_) {
-            if (wi[j] == (U)0.0 ) {
-                lev(idx) = std::complex<U>(vl[i * ldvl + j], 0.0);
-                idx++;
-                j++;
-            } else {
-                lev(idx) = std::complex<U>(vl[i * ldvl+j], vl[i*ldvl+(j+1)]);
-                idx++;
-                lev(idx) = std::complex<U>(vl[i * ldvl+j], -vl[i*ldvl+(j+1)]);
-                idx++;
-                j += 2;
-            }
+    for (int i = 0; i < x_size_; i++) {
+      int j = 0;
+      while (j < x_size_) {
+        if (wi[j] == (U)0.0) {
+          lev(idx) = std::complex<U>(vl[i * ldvl + j], 0.0);
+          idx++;
+          j++;
+        } else {
+          lev(idx) = std::complex<U>(vl[i * ldvl + j], vl[i * ldvl + (j + 1)]);
+          idx++;
+          lev(idx) = std::complex<U>(vl[i * ldvl + j], -vl[i * ldvl + (j + 1)]);
+          idx++;
+          j += 2;
         }
+      }
     }
 
     idx = 0;
-    for (int i=0; i < x_size_; i++) {
-        int j = 0;
-        while (j < x_size_) {
-            if (wi[j] == (U)0.0 ) {
-                rev(idx) = std::complex<U>(vr[i * ldvr + j], 0.0);
-                idx++;
-                j++;
-            } else {
-                rev(idx) = std::complex<U>(vr[i * ldvr+j], vr[i*ldvr+(j+1)]);
-                idx++;
-                rev(idx) = std::complex<U>(vr[i * ldvr+j], -vr[i*ldvr+(j+1)]);
-                idx++;
-                j += 2;
-            }
+    for (int i = 0; i < x_size_; i++) {
+      int j = 0;
+      while (j < x_size_) {
+        if (wi[j] == (U)0.0) {
+          rev(idx) = std::complex<U>(vr[i * ldvr + j], 0.0);
+          idx++;
+          j++;
+        } else {
+          rev(idx) = std::complex<U>(vr[i * ldvr + j], vr[i * ldvr + (j + 1)]);
+          idx++;
+          rev(idx) = std::complex<U>(vr[i * ldvr + j], -vr[i * ldvr + (j + 1)]);
+          idx++;
+          j += 2;
         }
+      }
     }
 
     delete[] A;
@@ -564,15 +584,12 @@ class Matrix {
     delete[] vl;
     delete[] vr;
 
-        std::cout << "print ev after others" << std::endl;
-        ev.print();
+    std::cout << "print ev after others" << std::endl;
+    ev.print();
 
-    return std::vector<Matrix<std::complex<U>>> {ev, lev, rev};
+    return std::vector<Matrix<std::complex<U>>>{ev, lev, rev};
   }
-
-
 };
-
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const Matrix<T>& m) {

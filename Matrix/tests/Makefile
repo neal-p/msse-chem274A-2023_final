@@ -20,19 +20,13 @@ LIB_DIR = ../lib
 #####################################################################################
 #####################################################################################
 
-test_basic_matrix: test_basic_matrix.cpp Matrix.h
-	$(CPP) $(CPPFLAGS) test_basic_matrix.cpp -o test_basic_matrix -llapacke -llapack -lcblas  
+old_test_basic_matrix: test_basic_matrix.cpp $(INC_DIR)/Matrix.h
+	$(CPP) $(CPPFLAGS) test_basic_matrix.cpp -o $(BIN_DIR)/test_basic_matrix -I$(INC_DIR) -llapacke -llapack -lcblas  
 
-testcblas: testcblas.cpp
-	$(CPP) $(CPPFLAGS) testcblas.cpp -o testcblas -lcblas 
-
-testlapack: testlapack.cpp
-	$(CPP) $(CPPFLAGS) testlapack.cpp -o testlapack -llapacke -llapack -lcblas  
-
-testeigenvectors: testeigenvectors.cpp
-	$(CPP) $(CPPFLAGS) testeigenvectors.cpp -o testeigenvectors -llapacke -llapack -lcblas  
+test_matrix: test_matrix.cpp $(INC_DIR)/Matrix.h
+	$(CPP) $(CPPFLAGS) test_matrix.cpp -o $(BIN_DIR)/test_matrix -I$(INC_DIR) -llapacke -llapack -lcblas  
 
 
-ALLTESTS = test_basic_matrix
+ALLTESTS = test_matrix
 
 make all: $(ALLTESTS)

@@ -110,7 +110,7 @@ class Matrix {
 
   void operator=(const Matrix<T>& m) {
     std::unique_ptr<T[]> new_a = std::make_unique<T[]>(m.size_);
-    memcpy(a_.get(), m.a_.get(), sizeof(T) * (m.size_));
+    memcpy(new_a.get(), m.a_.get(), sizeof(T) * (m.size_));
 
     a_ = std::move(new_a);
     x_size_ = m.x_size_;
@@ -308,12 +308,17 @@ class Matrix {
     // check low-cost first before the O(N) every-element check
     if (x_size_ != mat.x_size_) {
       return false;
-    } else if (y_size_ != mat.y_size) {
+    } else if (y_size_ != mat.y_size_) {
       return false;
     }
 
-    return std::equal(a_, a_ + size_, mat.a_);
+    return std::equal(a_.get(), a_.get() + size_, mat.a_.get());
   }
+
+  bool operator!=(const Matrix<T>& mat) const {
+    return !(*this == mat);
+  }
+
 
   template <typename U = T>
   Matrix<std::complex<U>> eigenvalues() {

@@ -116,4 +116,89 @@ int main() {
   std::cout << bannerS;
   std::cout << "# 5.3. Elementwise Matrix Multiplication" << std::endl;
   std::cout << bannerE;
+
+  B.reshape(2, 3);
+  std::vector<double> M_X_M_ew_expecteds{7, 16, 27, 40, 55, 72};
+
+  auto AB_elementwise = A.multiplyElements(B);
+  std::cout << "Matrix A: " << std::endl << A << std::endl;
+  std::cout << "Matrix B: " << std::endl << B << std::endl;
+  std::cout << "Elementwise A X B: " << std::endl
+            << AB_elementwise << std::endl;
+  for (int idx = 0; idx < 4; idx++) {
+    assert(M_X_M_ew_expecteds[idx] == AB_elementwise(idx));
+  }
+
+  // 5.4 Elementwise Matrix multiplication
+  std::cout << bannerS;
+  std::cout << "# 5.4. Assignment via = operator" << std::endl;
+  std::cout << bannerE;
+
+  std::cout << "Matrix A: " << std::endl << A << std::endl;
+  std::cout << "Matrix B: " << std::endl << B << std::endl;
+
+  std::cout << "Assign A = B" << std::endl;
+  A = B;
+  std::cout << "A: " << std::endl << A << std::endl;
+
+  std::vector<double> copy_expected{7, 8, 9, 10, 11, 12};
+  for (int idx = 0; idx < 6; idx++) {
+    assert(copy_expected[idx] == A(idx));
+  }
+
+  // 5.5 Filling an array
+  std::cout << bannerS;
+  std::cout << "# 5.4. Fill array" << std::endl;
+  std::cout << bannerE;
+
+  std::cout << "A before: " << std::endl << A << std::endl;
+  A.fill(5.);
+  std::cout << "A .fill(5): " << std::endl << A << std::endl;
+  for (int idx = 0; idx < 6; idx++) {
+    assert(A(idx) == 5.0);
+  }
+  A = 10.;
+  std::cout << "A = 10.0: " << std::endl << A << std::endl;
+  for (int idx = 0; idx < 6; idx++) {
+    assert(A(idx) == 10.0);
+  }
+
+  // 5.6 Compare matrices
+  std::cout << bannerS;
+  std::cout << "# 5.6. Compare matrices" << std::endl;
+  std::cout << bannerE;
+
+  auto C = B;
+
+  std::cout << "Matrix A: " << std::endl << A << std::endl;
+  std::cout << "Matrix B: " << std::endl << B << std::endl;
+  std::cout << "Matrix C: " << std::endl << C << std::endl;
+
+  std::cout << "A == B: " << (A == B) << std::endl;
+  assert(A != B);
+  std::cout << "B == C: " << (B == C) << std::endl;
+  assert(B == C);
+
+  // 5.8 Transpose
+  std::cout << bannerS;
+  std::cout << "# 5.8. Get transpose" << std::endl;
+  std::cout << bannerE;
+
+  std::cout << "Matrix A: " << std::endl << A << std::endl;
+  auto A_t = A.tp();
+  std::cout << "Transposed A: " << std::endl << A_t << std::endl;
+  for (int x = 0; x < A.getShape(0); x++) {
+    for (int y = 0; y < A.getShape(1); y++) {
+      assert(A(y, x) == A_t(x, y));
+    }
+  }
+
+  std::cout << "Matrix B: " << std::endl << B << std::endl;
+  auto B_t = B.tp();
+  std::cout << "Transposed B: " << std::endl << B_t << std::endl;
+  for (int x = 0; x < B.getShape(0); x++) {
+    for (int y = 0; y < B.getShape(1); y++) {
+      assert(B(y, x) == B_t(x, y));
+    }
+  }
 }

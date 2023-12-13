@@ -27,7 +27,7 @@ There are two ways to access and or modify the elements of a `Matrix`. Both of t
     1. via parenthesis operator with (row, col): `m(1, 2) = 1;` will access the second row, third column of the matrix and set it to 1
     2. via parenthesis operator with an absolute idx: `m(5) = 1` will access the 6th element in the flat row-major underlying array.
 
-Currently, no support for passing an initialized list of values to a matrix directly is supported. The user either populate the array point by point, or since accessing the underlying flat array is supported, it is easy to set the values in a loop such as the following:
+The user must either populate the array point by point, or since accessing the underlying flat array is supported, it is easy to set the values in a loop such as the following:
 
 ```
   double a[] = {-1.01, 0.86, -4.60, 3.31,  -4.81, 
@@ -125,7 +125,9 @@ Print the matrix to cout
 
 ## Matrix testing and example use
 
-Provided in `Matrix/tests/test_matrix.cpp` is a comprehensive test of all the above functionalities. The program demonstrates each of the required features and generally demonstrates how matrices can be manipulated. A Makefile is provided at `Matrix/tests/Makefile` that will compile the test program with the target `test_matrix` to `Matrix/bin/test_matrix`, and run a Valgrind leak-check with the target `leak_check`. Note! Since I have used BLAS and LAPACK, the `cblas` and `lapacke` headers must be visible to the compiler as well as the `libcblas` and `liblapacke`, `liblapack` library objects.
+Provided in `Matrix/tests/test_matrix.cpp` is a comprehensive test of all the above functionalities. The program demonstrates each of the required features and generally shows how the matrices can be manipulated. A Makefile is provided at `Matrix/tests/Makefile` that will compile the test program with the target `test_matrix` to `Matrix/bin/test_matrix`. Additionally, to run a Valgrind leak-check, the target `leak_check` target is provided. 
+
+Note! Since I have used BLAS and LAPACK, the `cblas` and `lapacke` headers must be visible to the compiler as well as the `libcblas` and `liblapacke`, `liblapack` library objects.
 
 Output of the test is provided in `Matrix/bin/test_matrix.txt`
 

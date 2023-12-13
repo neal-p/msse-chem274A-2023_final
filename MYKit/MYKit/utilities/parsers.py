@@ -3,12 +3,12 @@ Provided functions.
 
 """
 
-
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Union
 
 
 def parse_sdf(
-    filename: str,
+    filename: [str, Path],
     include_hydrogen: Optional[bool] = False,
     include_coords: bool = True,
 ) -> tuple[dict, list]:
@@ -32,13 +32,14 @@ def parse_sdf(
         and the third represents the bond order.
     """
 
-    try:
-        with open(filename) as f:
-            data = [x.strip() for x in f.readlines()]
-    except FileNotFoundError:
+    filename = Path(filename)
+    if not filename.exists():
         raise FileNotFoundError(
             f"Could not find {filename}. Please check the path and try again."
         )
+
+    with open(filename, "r") as f:
+        data = [x.strip() for x in f.readlines()]
 
     # read the number of atoms and bonds from the SDF file
     num_atoms = int(data[3].split()[0])
@@ -79,14 +80,21 @@ def parse_sdf(
 
     # remove hydrogens.
     if not include_hydrogen:
+        index_remap = {}
+        idx = 0
+        for i, element in enumerate(elements):
+            if element != "H":
+                index_remap[i] = idx
+                idx += 1
+
+        elements = [element for i, element in enumerate(elements) if i in index_remap]
         bonds = [
-            x for x in bonds if elements[x[0] - 1] != "H" and elements[x[1] - 1] != "H"
+            (index_remap[b[0]], index_remap[b[1]], b[2])
+            for b in bonds
+            if b[0] in index_remap and b[1] in index_remap
         ]
 
-        heavy_atoms = [idx for idx, atom in enumerate(elements) if atom != "H"]
-        elements = [elements[idx] for idx in heavy_atoms]
-
         if include_coords:
-            coords = [coords[idx] for idx in heavy_atoms]
+            coords = [coord for i, coord in enumerate(coords) if i in index_remap]
 
     return elements, bonds, coords

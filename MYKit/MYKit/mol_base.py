@@ -200,14 +200,12 @@ class Mol:
 
         return "".join(output)
 
-    def fingerprint(
-        self, minimum_path_length=1, maximum_path_length=7, nBits=2048, bitsPerHash=2
-    ):
+    def fingerprint(self, min_path=2, max_path=7, nBits=2048, bitsPerHash=2):
         np_seed_og = np.random.get_state()
 
         fp = np.zeros(2048)
         all_walks = []
-        for length in range(minimum_path_length, maximum_path_length + 1):
+        for length in range(min_path, max_path + 1):
             all_walks.extend(self.__getAllExhaustivePaths(length))
 
         all_walks = list(map(self.__atomPathToSmi, all_walks))
@@ -226,6 +224,66 @@ class Mol:
 
         np.random.set_state(np_seed_og)
         return fp
+
+    @property
+    def formula(self) -> str:
+        """
+        Return the molecular formula
+
+        Note, hydrogens are not really handled correctly since we don't have
+        a notion of valency in the Mol class :(
+        """
+        element_counts = {}
+        for node, data in self.graph.nodes(data=true):
+            element = data["element"]
+            if element not in element_counts:
+                element_counts[element] = 0
+            element_counts[element] += 1
+
+        formula = ""
+        if "C" in element_counts:
+            formula += "C" + element_counts["C"]
+            del element_counts["C"]
+
+        if "N" in element_counts:
+            formula += "N" + element_counts["N"]
+            del element_counts["N"]
+
+        if "O" in element_counts:
+            formula += "O" + element_counts["O"]
+            del element_counts["O"]
+
+        for element, count in element_counts.items():
+            formula += f"{element }{count}"
+
+        return formula
+
+    def __eq__(self, other, **kwargs) -> bool:
+        """
+        Equality is defined by:
+            Same molecular formula (given by .formula)
+            Same connectivity (indirectly given by fingerprint equality)
+
+        kwargs are passed to fingerprint function
+        """
+
+        if self.formula != other.formula:
+            return False
+
+        return np.array_equal(self.fingerprint(), other.fingerprint())
+
+    def hasSubstructMatch(self, substructure, **kwargs) -> bool:
+        """
+        Use fingerprint to determine if the given substructure is present in the molecule
+
+        """
+        onbits = np.nonzero(substructure.fingerprint(**kwargs))[0]
+        fp = self.fingerprint(**kwargs)
+        for bit in onbits:
+            if fp[bit] != 1:
+                return False
+
+        return True
 
 
 def SDFToMol(file: Union[str, Path], **kwargs) -> Mol:

@@ -25,6 +25,42 @@ class Matrix {
   int size_;
   Method method_;
 
+  inline T& at(const int y, const int x) {
+    if (x < 0 || x >= x_size_) {
+      throw std::out_of_range("invalid x dimension");
+    }
+    if (y < 0 || y >= y_size_) {
+      throw std::out_of_range("invalid y dimension");
+    }
+
+    return a_[(x_size_ * y) + x];
+  }
+
+  inline T at(const int y, const int x) const {
+    if (x < 0 || x >= x_size_) {
+      throw std::out_of_range("invalid x dimension");
+    }
+    if (y < 0 || y >= y_size_) {
+      throw std::out_of_range("invalid y dimension");
+    }
+
+    return a_[(x_size_ * y) + x];
+  }
+
+  inline T& at(const int idx) {
+    if (idx < 0 || idx >= size_) {
+      throw std::out_of_range("invalid idx");
+    }
+    return a_[idx];
+  }
+
+  inline T at(const int idx) const {
+    if (idx < 0 || idx >= size_) {
+      throw std::out_of_range("invalid idx");
+    }
+    return a_[idx];
+  }
+
   Matrix<T> multiplyNaive(const Matrix<T>& mat) const {
     if (x_size_ != mat.y_size_) {
       throw std::runtime_error("Matrices are incompatible, cannot multiply");
@@ -123,13 +159,16 @@ class Matrix {
 
   void reshape(const int rows, const int cols) {
     int new_size = rows * cols;
-    std::unique_ptr<T[]> new_a = std::make_unique<T[]>(new_size);
 
-    // Copy what elements do fit into the new array
-    int to_copy = std::min(new_size, size_);
-    memcpy(new_a.get(), a_.get(), sizeof(T) * to_copy);
+    if (new_size != size_) {
+      std::unique_ptr<T[]> new_a = std::make_unique<T[]>(new_size);
 
-    a_ = std::move(new_a);
+      // Copy what elements do fit into the new array
+      int to_copy = std::min(new_size, size_);
+      memcpy(new_a.get(), a_.get(), sizeof(T) * to_copy);
+
+      a_ = std::move(new_a);
+    }
     x_size_ = cols;
     y_size_ = rows;
     size_ = new_size;
@@ -147,42 +186,6 @@ class Matrix {
     } else {
       throw std::out_of_range("invalid axis");
     }
-  }
-
-  inline T& at(const int y, const int x) {
-    if (x < 0 || x >= x_size_) {
-      throw std::out_of_range("invalid x dimension");
-    }
-    if (y < 0 || y >= y_size_) {
-      throw std::out_of_range("invalid y dimension");
-    }
-
-    return a_[(x_size_ * y) + x];
-  }
-
-  inline T at(const int y, const int x) const {
-    if (x < 0 || x >= x_size_) {
-      throw std::out_of_range("invalid x dimension");
-    }
-    if (y < 0 || y >= y_size_) {
-      throw std::out_of_range("invalid y dimension");
-    }
-
-    return a_[(x_size_ * y) + x];
-  }
-
-  inline T& at(const int idx) {
-    if (idx < 0 || idx >= size_) {
-      throw std::out_of_range("invalid idx");
-    }
-    return a_[idx];
-  }
-
-  inline T at(const int idx) const {
-    if (idx < 0 || idx >= size_) {
-      throw std::out_of_range("invalid idx");
-    }
-    return a_[idx];
   }
 
   T& operator()(const int y, const int x) { return at(y, x); }
@@ -325,7 +328,7 @@ class Matrix {
   bool operator!=(const Matrix<T>& mat) const { return !(*this == mat); }
 
   template <typename U = T>
-  Matrix<std::complex<U>> eigenvalues() {
+  Matrix<std::complex<U>> eigenvalues() const {
     Matrix<std::complex<U>> ev(1, x_size_);
 
     U* wr = new U[x_size_];
@@ -371,7 +374,7 @@ class Matrix {
   }
 
   template <typename U = T>
-  Matrix<std::complex<U>> reigenvectors() {
+  Matrix<std::complex<U>> reigenvectors() const {
     Matrix<std::complex<U>> ev(x_size_, x_size_);
 
     U* wr = new U[x_size_];
@@ -435,7 +438,7 @@ class Matrix {
   }
 
   template <typename U = T>
-  Matrix<std::complex<U>> leigenvectors() {
+  Matrix<std::complex<U>> leigenvectors() const {
     Matrix<std::complex<U>> ev(x_size_, x_size_);
 
     U* wr = new U[x_size_];
@@ -499,7 +502,7 @@ class Matrix {
   }
 
   template <typename U = T>
-  std::vector<Matrix<std::complex<U>>> alleigen() {
+  std::vector<Matrix<std::complex<U>>> alleigen() const {
     Matrix<std::complex<U>> ev(1, x_size_);
     Matrix<std::complex<U>> lev(x_size_, x_size_);
     Matrix<std::complex<U>> rev(x_size_, x_size_);

@@ -148,7 +148,7 @@ int main() {
 
   // 5.5 Filling an array
   std::cout << bannerS;
-  std::cout << "# 5.4. Fill array" << std::endl;
+  std::cout << "# 5.5. Fill array" << std::endl;
   std::cout << bannerE;
 
   std::cout << "A before: " << std::endl << A << std::endl;

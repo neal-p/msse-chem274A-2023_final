@@ -26,6 +26,9 @@ old_test_basic_matrix: test_basic_matrix.cpp $(INC_DIR)/Matrix.h
 test_matrix: test_matrix.cpp $(INC_DIR)/Matrix.h
 	$(CPP) $(CPPFLAGS) test_matrix.cpp -o $(BIN_DIR)/test_matrix -I$(INC_DIR) -llapacke -llapack -lcblas  
 
+leak_test: test_matrix
+	valgrind --leak-check=yes $(BIN_DIR)/test_matrix
+
 
 ALLTESTS = test_matrix
 

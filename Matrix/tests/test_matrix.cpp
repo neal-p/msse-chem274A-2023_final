@@ -201,4 +201,103 @@ int main() {
       assert(B(y, x) == B_t(x, y));
     }
   }
+
+  // 5.9 Complex conjugate
+  std::cout << bannerS;
+  std::cout << "# 5.9. Get complex conjugate" << std::endl;
+  std::cout << bannerE;
+
+  std::cout << "Matrix A: " << std::endl << A << std::endl;
+  auto A_ccj = A.ccj();
+  std::cout << "Complex conjugate A: " << std::endl << A_ccj << std::endl;
+  for (int x = 0; x < A.getShape(0); x++) {
+    for (int y = 0; y < A.getShape(1); y++) {
+      assert(A(y, x) == A_ccj(y, x));
+    }
+  }
+
+  Matrix<std::complex<double>> D(2, 2);
+  D(0, 0) = std::complex<double>(1, 1);
+  D(0, 1) = std::complex<double>(1, -1);
+  D(1, 0) = std::complex<double>(5, 0.1);
+  D(1, 1) = std::complex<double>(5, -1.5);
+
+  std::cout << "Matrix D: " << std::endl << D << std::endl;
+  auto D_ccj = D.ccj();
+  std::cout << "Complex conjugate D: " << std::endl << D_ccj << std::endl;
+  for (int x = 0; x < D.getShape(0); x++) {
+    for (int y = 0; y < D.getShape(1); y++) {
+      assert(std::conj(D(y, x)) == D_ccj(y, x));
+    }
+  }
+
+  // 5.10 Conjugate transpose
+  std::cout << bannerS;
+  std::cout << "# 5.10. Get conjugate transpose" << std::endl;
+  std::cout << bannerE;
+
+  auto D_og = D;
+
+  std::cout << "Matrix A: " << std::endl << A << std::endl;
+  auto A_ct = A.ct();
+  std::cout << "Conjugate transpose A: " << std::endl << A_ct << std::endl;
+  for (int x = 0; x < A.getShape(0); x++) {
+    for (int y = 0; y < A.getShape(1); y++) {
+      assert(A(y, x) == A_ct(x, y));
+    }
+  }
+
+  std::cout << "Matrix D: " << std::endl << D << std::endl;
+  auto D_ct = D.ct();
+  std::cout << "Conjugate transpose D: " << std::endl << D_ccj << std::endl;
+  for (int x = 0; x < D.getShape(0); x++) {
+    for (int y = 0; y < D.getShape(1); y++) {
+      assert(std::conj(D(y, x)) == D_ct(x, y));
+    }
+  }
+
+  // 5.11 Inplace operations
+  std::cout << bannerS;
+  std::cout << "# 5.11. Inplace operations" << std::endl;
+  std::cout << bannerE;
+
+  std::cout << "Matrix D: " << std::endl << D << std::endl;
+
+  D.tp_ip();
+  std::cout << "D.tp_ip()" << std::endl;
+  std::cout << "Matrix D: " << std::endl << D << std::endl;
+
+  D.ccj_ip();
+  std::cout << "D.ccj_ip()" << std::endl;
+  std::cout << "Matrix D: " << std::endl << D << std::endl;
+
+  D.ct_ip();
+  std::cout << "D.ct_ip()" << std::endl;
+  std::cout << "Matrix D: " << std::endl << D << std::endl;
+
+  assert(D == D_og);
+
+  // 5.12 Bonus Eigenvalue operations
+  std::cout << bannerS;
+  std::cout << "# 5.12. Bonus eigenvalue operations" << std::endl;
+  std::cout << bannerE;
+
+  // Use the LAPACK reference test:
+  // https://www.intel.com/content/www/us/en/docs/onemkl/code-samples-lapack/2022-1/lapacke-dgeev-example-c-row.html
+  double a[] = {-1.01, 0.86, -4.60, 3.31,  -4.81, 3.98,  0.53, -7.04, 5.29,
+                3.55,  3.30, 8.26,  -3.89, 8.20,  -1.51, 4.43, 4.96,  -7.66,
+                -7.33, 6.18, 7.31,  -6.43, -6.16, 2.47,  5.58};
+
+  Matrix<double> symm(5, 5);
+
+  for (int idx = 0; idx < 25; idx++) {
+    symm(idx) = a[idx];
+  }
+
+  std::cout << "Matrix: " << std::endl << symm << std::endl;
+  std::cout << "Eigenvalues" << std::endl << symm.eigenvalues() << std::endl;
+  std::cout << "left Eigenvectors" << std::endl
+            << symm.leigenvectors() << std::endl;
+  std::cout << "right Eigenvectors" << std::endl
+            << symm.reigenvectors() << std::endl;
 }

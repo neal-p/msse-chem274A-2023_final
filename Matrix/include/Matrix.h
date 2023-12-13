@@ -212,8 +212,15 @@ class Matrix {
   Matrix<T> ccj() const {
     Matrix<T> ccj(y_size_, x_size_);
 
-    for (int idx = 0; idx < size_; idx++) {
-      ccj.a_[idx] = std::conj(a_[idx]);
+    // Not the best test for whether we already
+    // have a complex number since is_compound_v
+    // will return true for other types/classes
+    if constexpr (std::is_compound_v<T>) {
+      for (int idx = 0; idx < size_; idx++) {
+        ccj.a_[idx] = std::conj(a_[idx]);
+      }
+    } else {
+      ccj = *this;
     }
 
     return ccj;
@@ -315,10 +322,7 @@ class Matrix {
     return std::equal(a_.get(), a_.get() + size_, mat.a_.get());
   }
 
-  bool operator!=(const Matrix<T>& mat) const {
-    return !(*this == mat);
-  }
-
+  bool operator!=(const Matrix<T>& mat) const { return !(*this == mat); }
 
   template <typename U = T>
   Matrix<std::complex<U>> eigenvalues() {

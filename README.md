@@ -257,7 +257,7 @@ Molecules can also be displayed in an interactive python notebook, or their stru
 display(mol)
 ```
 
-![Example displayed molecule](images/example_2D.png)
+![Example displayed molecule]("images/example_2D.png")
 
 Plotting to a file is done via `Mol.plot_to_file`, where you can pass in the specific `networkx` layout, use the coordinates, or specify `'infer'` to use coordinates if availible, but fall back on `networkx`. The availible layouts are:
 

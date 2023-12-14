@@ -5,8 +5,6 @@ import sys
 
 p = str(Path(__file__).parent.parent.resolve())
 
-print(p)
-
 sys.path.insert(0, p)
 import MYKit
 

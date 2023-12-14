@@ -257,7 +257,7 @@ Molecules can also be displayed in an interactive python notebook, or their stru
 display(mol)
 ```
 
-![Example displayed molecule](images/example_2D.png)
+!(Example displayed molecule)[images/example_2D.png]
 
 Plotting to a file is done via `Mol.plot_to_file`, where you can pass in the specific `networkx` layout, use the coordinates, or specify `'infer'` to use coordinates if availible, but fall back on `networkx`. The availible layouts are:
 
@@ -281,14 +281,103 @@ Fairly standard CPK color scheme is used for plotting, but the specific atom col
 
 Lastly, interactive 3D plotting is made availible in Jupyter notebooks, as well as writing the raw HTML to file for the interactive widget.
 
-![Example displayed molecule](images/example_3D.png)
+!(Example displayed molecule)[images/example_3D.png]
 
 Two example notebooks are provided to demonstrate this functionality: 
   - `MYKit/notebooks/2D_display.ipynb`
   - `MYKit/notebooks/3D_display.ipynb`
 
 
-## Molecular properties
+## Molecule information
+
+A few basic attributes of the molecule are provided as properties to the `Mol` class:
+    - `formula`: the molecular formula
+    - `rings`: list of tuples of atoms in rings
+    - `numRings`: number of rings in the molecule
+    - `ringSizes`: size of each ring in the molecule
+
+## Molecular fingerprinting
+
+A basic fingerprinting scheme was used to provide quick approximate substructure search or similarity scoring. The fingerprint is constructed by making all possible walks along the molecule graph of a certain set of lengths, hashing the resulting pseudo-SMILES for that walk, then folding the hash to fit in the bounds of the fingerprint specified by using that hash as a seed for a random generator to give a value between 0-nBits. The result is a np.array of bits that are 0 or 1. 
+
+The following parameters are tunable:
+  - `min_path`: minimum path along the graph for hashing (defaults to 1)
+  - `max_path`: maximum path along the graph for hashing (defaults to 7)
+  - `nBits`: length of fingerprint (defaults to 2048)
+  - `bitsPerHash`: for each walk, how many bits should it set (defaults to 2)
+
+```
+fp = mol.fingerprint()
+fp_1024 = mol.fingerprint(nBits=1024)
+```
+
+The molecular fingerprint can be used for a lot of impactful cheminformatics. Here, I implement a substructure search. If you fingerprint a substructure, and the on-bits in the fingerprint are `0, 53, 998`, then any structure that contains that substructure must also have its `0, 53, 998` bits on. This allows for very fast pattern matching compared to a much slower graph-isomorphism problem. But, the drawback is that this configuration of on-bits is not *unique* to our query substructure. So, by random chance we can have flase positive matches that are caused by some other configuration of walks that also happen to flip those exact same bits. The smaller the fingerprint size, the more 'collisions' are likely, and the more false positives we will get. In particular, this strategy works best for small molecules since as the molecule size grows, so does the raw number of on-bits, increasing the likelihood of collisions relative to other large molecules. Luckily, in most small molecule drug discovery, the molecules are... small. An industry standard is 1024-2048 bit fingerprint. 
+
+I provide the substructure matching as a method to the `Mol` class: `Mol.hasSubstructMatch`. This compares the molecule instance it was called from with the provided other 'query' molecule, checking if the bits on in the query fingerprint are also on in the current molecule. 
+
+For example, here is a search of benzene and toluene:
+
+```
+benzene_elements = ["C"] * 6
+benzene_bonds = [(0, 1, 2), (1, 2, 1), (2, 3, 2), (3, 4, 1), (4, 5, 2), (5, 0, 1)]
+
+toluene_elements = ["C"] * 7
+toluene_bonds = [
+    (0, 1, 2),
+    (1, 2, 1),
+    (2, 3, 2),
+    (3, 4, 1),
+    (4, 5, 2),
+    (5, 0, 1),
+    (0, 6, 1),
+]
+
+benzene = Mol(benzene_elements, benzene_bonds)
+toluene = Mol(toluene_elements, toluene_bonds)
+
+print(toluene.hasSubstructMatch(benzene))
+print(benzene.hasSubstructMatch(toluene))
+```
+
+> False
+> True
+
+We first construct benzene and toluene molecules. First, we use benzene as our query on toluene. We print the result and see that indeed benzene is a substructure of toluene!
+
+
+Then we search for toluene in benzene. It returns `False` since toluene is not a substructure of benzene.
+
+Two utilities are provided for doing substructure searches. 
+
+### Command line substructure search
+
+A command line python program `MYKit/bin/substructure_search.py` is provided. This takes in a query sdf file and a glob string to sear for other sdf files, then searches for the query in all the provided 'other' sdf files:
+
+```
+usage: Given an sdf file, search other sdf files for matching substructure [-h] -q QUERY_STRUCTURE -d DATABASE_STRUCTURES
+                                                                           [--min_path MIN_PATH] [--max_path MAX_PATH]
+                                                                           [-H INCLUDE_HYDROGEN]
+
+options:
+  -h, --help            show this help message and exit
+  -q QUERY_STRUCTURE, --query_structure QUERY_STRUCTURE
+                        SDF file for structure to query for in other molecules
+  -d DATABASE_STRUCTURES, --database_structures DATABASE_STRUCTURES
+                        A file glob matching SDF files to search
+  --min_path MIN_PATH   minimum path length for fingerprint
+  --max_path MAX_PATH   minimum path length for fingerprint
+  -H INCLUDE_HYDROGEN, --include_hydrogen INCLUDE_HYDROGEN
+                        Include hydrogen in structures
+```
+
+### Jupyter notebook search
+
+The same functionality is provided in a jupyter notebook which searches for a query and displays all the matching hits: `MYKit/notebooks/substructure_search.ipynb`.
+
+Here, a fairly unique substructure is searched, yielding itself and one other match:
+
+!(Example substructure search)[images/unique_substructure.png]
+
 
 
 

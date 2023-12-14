@@ -323,7 +323,7 @@ class Mol:
 
         np_seed_og = np.random.get_state()
 
-        fp = np.zeros(2048)
+        fp = np.zeros(nBits)
         all_walks = []
         for length in range(min_path, max_path + 1):
             all_walks.extend(self.getAllExhaustivePaths(length))

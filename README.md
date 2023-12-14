@@ -388,9 +388,16 @@ Here, a fairly unique substructure is searched, yielding itself and one other ma
 
 ## Testing and Environment
 
+To build the environment and run the `pytest` tests, I provide a Makefile at `MYKit/Makfile`. There are two main targets:
+  - `environment`: creates a new conda environment based on the `MYKit/environment.yml` configuration
+  - `test`: runs `pytest` on the package.
+
+The latter tests all the core `Mol` functionalities. One test is written for each method/property, but I use `pytest`s parametrize  feature to do the test on multiple molecules to check for valid results in a few different situations. This was particularly helpful for getting the most out of my testing and is a feature of `pytest` that I will use more because of this course!
 
 
+## Final thoughts
 
+I had fun implementing this molecule class. I wish I could have been able to implement more chemistry-aware functionality, or maybe even a very simple SMILES parser. But, given my time limitations, I got to provide a decent amount of extra functionality. I think my biggest design choice that could have gone differently was using the `@property` decorator to make the methods that dynamically calculate values, like the formula, appear as attributes. This would make a bit more sense if the molecules were editable, but since I currently have no way of adding/removing atoms or bonds, I could have cached these properties to something like `._formula` and only computed them once on initalization. But, the current regime may give more flexibility to add molecule editing features later. For things like the fingerprint, I debated storing that as an attribute/property as well. But, since the fingerprint does require input from the user for the path lengths and nBits, I chose to let the user chose to store or recompute the fingerprint themselves. Unfortunately, this does mean that I re-calculate the fingerprint each time I call `hasSubstructMatch`, which in the real-world would be a crazy waste of compute. Without more real-world use cases it is a bit hard to know which direction is 'best', but caching values that are not frequently changed would certainly be a good way to improve the current code.
 
 
 

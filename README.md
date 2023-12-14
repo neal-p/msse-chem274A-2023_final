@@ -281,7 +281,7 @@ Fairly standard CPK color scheme is used for plotting, but the specific atom col
 
 Lastly, interactive 3D plotting is made availible in Jupyter notebooks, as well as writing the raw HTML to file for the interactive widget.
 
-![Example displayed molecule](images/example_3D.png)
+![Example displayed molecule](images/example_molecule_3D.png))
 
 Two example notebooks are provided to demonstrate this functionality: 
   - `MYKit/notebooks/2D_display.ipynb`
@@ -376,7 +376,7 @@ The same functionality is provided in a jupyter notebook which searches for a qu
 
 Here, a fairly unique substructure is searched, yielding itself and one other match:
 
-![Example substructure search](images/unique_substructure.png)
+![Example substructure search](images/unique_substructure_hits.png)
 
 
 

@@ -137,7 +137,7 @@ I use RDKit every day for work and have a few times tried to hand-roll my own RD
 
 ## General Design
 
-The `Mol` object is the molecule container class in MYKit. This object represents a molecule graph, which is internally implemented as a `NetworkX` graph. Unfortunately, this basic graph structure lacks the chemistry awareness that RDKit provides, not being able to detect aromaticity, correct valences, radicals, invalid structures, or implicit hydrogens. I briefly went down the route of putting in some very basic heuristics based on the number of valence electrons of an atom knowing how many bonds it should form, etc. But, to do so properly quickly became out of scope for this project. 
+The `Mol` object is the molecule container class in MYKit. This object represents a molecule graph, which is internally implemented as a `NetworkX` graph. I chose to compose my class this way to isolate the chemistry-related functionalities for molecules (the elements I directly implement) from the underlying graph structure logic (handled by `networkx`). Unfortunately, this basic graph structure lacks the chemistry awareness that RDKit provides, not being able to detect aromaticity, correct valences, radicals, invalid structures, or implicit hydrogens. I briefly went down the route of putting in some very basic heuristics based on the number of valence electrons of an atom knowing how many bonds it should form, etc. But, to do so properly quickly became out of scope for this project. 
 
 But, despite this glaring real-world limitation, I did have a lot of fun putting together the class and especially had some fun extending to 3D plotting.
 
@@ -167,6 +167,89 @@ MYKit/
  - `tests`: tests all of the `Mol` functionalities on a few basic structures
  - `Makefile`: contains target for building the environment `environment`, running tests `test`, and linting `lint`
  - `environment.yml`: specify required packages
+
+## Basic use
+
+The `Mol` class can be constructed directly from a list of element symbols and a list of bonds. The list of bonds should be a list of tuples containing `(atom1, atom2, bond_order)`, where `atom1` is the index of the first atom in the bond and `atom2` is the index of the second atom. 
+
+Alternatively, an SDF file parser is provided with the function `SDFToMol`, which can be imported from the top level module. For example, you can construct benzene as follows:
+
+```
+from MYKit import Mol
+
+benzene_elements = ["C"] * 6
+benzene_bonds = [(0, 1, 2), (1, 2, 1), (2, 3, 2), (3, 4, 1), (4, 5, 2), (5, 0, 1)]
+
+benzene = Mol(benzene_elements, benzene_bonds)
+```
+
+>> benzene.sdf
+
+    CT1001419667
+
+
+     12 12  0  1  0               999 V2000
+       -0.0167    1.3781    0.0096 C   0 00  0  0  0  0  0  0  0  0  0  0
+        0.0021   -0.0041    0.0020 C   0 00  0  0  0  0  0  0  0  0  0  0
+        1.1709    2.0855    0.0021 C   0 00  0  0  0  0  0  0  0  0  0  0
+        1.2084   -0.6789   -0.0132 C   0 00  0  0  0  0  0  0  0  0  0  0
+        2.3960    0.0285   -0.0212 C   0 00  0  0  0  0  0  0  0  0  0  0
+        2.3773    1.4107   -0.0131 C   0 00  0  0  0  0  0  0  0  0  0  0
+       -0.9592    1.9054    0.0170 H   0  0  0  0  0  0  0  0  0  0  0  0
+       -0.9258   -0.5567    0.0083 H   0  0  0  0  0  0  0  0  0  0  0  0
+        1.1563    3.1654    0.0077 H   0  0  0  0  0  0  0  0  0  0  0  0
+        1.2231   -1.7588   -0.0184 H   0  0  0  0  0  0  0  0  0  0  0  0
+        3.3385   -0.4987   -0.0324 H   0  0  0  0  0  0  0  0  0  0  0  0
+        3.3051    1.9634   -0.0197 H   0  0  0  0  0  0  0  0  0  0  0  0
+      1  2 02  0  1  0  0
+      1  3 01  0  1  0  0
+      1  7  1  0  0  0  0
+      2  4 01  0  1  0  0
+      2  8  1  0  0  0  0
+      3  6 02  0  1  0  0
+      3  9  1  0  0  0  0
+      4  5 02  0  1  0  0
+      4 10  1  0  0  0  0
+      5  6 01  0  1  0  0
+      5 11  1  0  0  0  0
+      6 12  1  0  0  0  0
+    M  END
+    $$$$
+
+```
+from MYKit import SDFToMol
+
+mol = SDFToMol("benzene.sdf")
+```
+
+Additionally, the user can provide coordinates and additional molecule-level attributes:
+```
+from MYKit import Mol
+
+benzene_elements = ["C"] * 6
+benzene_bonds = [(0, 1, 2), (1, 2, 1), (2, 3, 2), (3, 4, 1), (4, 5, 2), (5, 0, 1)]
+
+benzene = Mol(benzene_elements, benzene_bonds, attributes={"_Name": "benzene"}, 
+            coords=[
+                    [-0.0167, 1.378, 0.0096],
+                    [0.002, -0.004, 0.002],
+                    [1.1709, 2.085, 0.002],
+                    [1.2084, -0.678, -0.0132],
+                    [2.3960, 0.0285, -0.0212], 
+                    [2.3773, 1.410, -0.0131], 
+                    ])
+```
+
+The `_Name` attribute specifically will set the title of the molecule (similar to the special attributes of an RDKit mol).
+
+
+Printing the object gives a message about the number of atoms, bonds, and rings:
+
+```
+print(benzene)
+```
+>> Mol benzene with 6 atoms, 6 bonds, and 1 rings
+
 
 
 

@@ -257,7 +257,7 @@ Molecules can also be displayed in an interactive python notebook, or their stru
 display(mol)
 ```
 
-!(Example displayed molecule)[images/example_2D.png]
+![Example displayed molecule](images/example_2D.png)
 
 Plotting to a file is done via `Mol.plot_to_file`, where you can pass in the specific `networkx` layout, use the coordinates, or specify `'infer'` to use coordinates if availible, but fall back on `networkx`. The availible layouts are:
 
@@ -281,7 +281,7 @@ Fairly standard CPK color scheme is used for plotting, but the specific atom col
 
 Lastly, interactive 3D plotting is made availible in Jupyter notebooks, as well as writing the raw HTML to file for the interactive widget.
 
-!(Example displayed molecule)[images/example_3D.png]
+![Example displayed molecule](images/example_3D.png)
 
 Two example notebooks are provided to demonstrate this functionality: 
   - `MYKit/notebooks/2D_display.ipynb`
@@ -339,7 +339,7 @@ print(toluene.hasSubstructMatch(benzene))
 print(benzene.hasSubstructMatch(toluene))
 ```
 
-> False
+> False \
 > True
 
 We first construct benzene and toluene molecules. First, we use benzene as our query on toluene. We print the result and see that indeed benzene is a substructure of toluene!
@@ -376,7 +376,7 @@ The same functionality is provided in a jupyter notebook which searches for a qu
 
 Here, a fairly unique substructure is searched, yielding itself and one other match:
 
-!(Example substructure search)[images/unique_substructure.png]
+![Example substructure search](images/unique_substructure.png)
 
 
 

@@ -281,7 +281,7 @@ Fairly standard CPK color scheme is used for plotting, but the specific atom col
 
 Lastly, interactive 3D plotting is made availible in Jupyter notebooks, as well as writing the raw HTML to file for the interactive widget.
 
-![Example displayed molecule](images/example_molecule_3D.png))
+![Example displayed molecule](images/example_molecule_3D.png)
 
 Two example notebooks are provided to demonstrate this functionality: 
   - `MYKit/notebooks/2D_display.ipynb`
@@ -347,7 +347,12 @@ We first construct benzene and toluene molecules. First, we use benzene as our q
 
 Then we search for toluene in benzene. It returns `False` since toluene is not a substructure of benzene.
 
-Two utilities are provided for doing substructure searches. 
+
+Similarly, we can also use the fingerprint as a means for determining if two molecules are the same. While it may seem trivial, because of the myraid ways you could build a molecule with different atom indices, coordinates, implicit vs explicit hydrogens, very quickly determining if two molecules are the same is not straightforward without decently complex graph theory operations. But, like the substructure search problem, we can get an approximation with the fingerprint. 
+
+I provide the `__eq__` operator for the `Mol` class. First, this class does a relatively inexpensive check of whether the molecular formulas of the two moleculs are the same. If not, and ignoring our limitations of no implicit hydrogens, then the two structures cannot be the same. If the formula are the same, they still may not have the same connectivity. Therefore, I also check the fingerprint equality. Only if the formula, and the fingerprints are equal do I return `True`. While checking the fingerprint alone is certainly a valid way to do the comparison, I argue that first checking the formulas provides an efficient short-circut; getting the formula is an O(N) operation which iterates over the atoms once. But, building a fingerprint is much more costly since you must walk the molecule graph exhaustively. Therefore, we can significantly reduce our computation by rejecting molecules that cannot be equivalent by formula first. Second, this means of equivalence falls victim to the same false positives as described for the substructure search. There may be collisions, or bad luck that generates non-unique fingerprints. But, to do so with the same formula is every more unlikely. Since I require the formula to be the same, this means the fingerprint is effectively a 'connectivity' check and it is very unlikely for *just* differences in connectivity to collide with the reasonably robust hash function I used, given a reasonable fingerprint size. 
+
+
 
 ### Command line substructure search
 
@@ -370,6 +375,8 @@ options:
                         Include hydrogen in structures
 ```
 
+I used `argparse` to handle my command line arguments. I am very familiar with the library and it makes it much more explicit how the user should interact with the program by providing command line flags. Therefore, I find it a great solution for this type of problem!
+
 ### Jupyter notebook search
 
 The same functionality is provided in a jupyter notebook which searches for a query and displays all the matching hits: `MYKit/notebooks/substructure_search.ipynb`.
@@ -379,7 +386,7 @@ Here, a fairly unique substructure is searched, yielding itself and one other ma
 ![Example substructure search](images/unique_substructure_hits.png)
 
 
-
+## Testing and Environment
 
 
 

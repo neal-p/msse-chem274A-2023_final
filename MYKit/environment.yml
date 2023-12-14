@@ -10,6 +10,7 @@ dependencies:
   - plotly
   - numpy
   - ipykernel
+  - jupyter
   - black
   - flake8
   - pip

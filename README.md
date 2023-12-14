@@ -213,7 +213,7 @@ benzene = Mol(benzene_elements, benzene_bonds)
 >> 5 11  1  0  0  0  0  \
 >> 6 12  1  0  0  0  0  \
 >> M  END \
->> $$$$ \
+>> $$$$ 
 
 ```
 from MYKit import SDFToMol
@@ -242,12 +242,57 @@ benzene = Mol(benzene_elements, benzene_bonds, attributes={"_Name": "benzene"},
 The `_Name` attribute specifically will set the title of the molecule (similar to the special attributes of an RDKit mol).
 
 
+## Displaying molecules
+
 Printing the object gives a message about the number of atoms, bonds, and rings:
 
 ```
 print(benzene)
 ```
->> Mol benzene with 6 atoms, 6 bonds, and 1 rings
+> Mol benzene with 6 atoms, 6 bonds, and 1 rings
+
+Molecules can also be displayed in an interactive python notebook, or their structure image can be written to a file. If coordinates are present, it will attempt to use those coordinates to provide a nice layout, otherwise `networkx` determines the layout. 
+
+```
+display(mol)
+```
+
+![Example displayed molecule](images/example_2D.png)
+
+Plotting to a file is done via `Mol.plot_to_file`, where you can pass in the specific `networkx` layout, use the coordinates, or specify `'infer'` to use coordinates if availible, but fall back on `networkx`. The availible layouts are:
+
+  - "circular"
+  - "kamada_kawai"
+  - "random"
+  - "shell"
+  - "spring"
+  - "project_xy"
+  - "project_xz"
+  - "project_yz"
+  - "use2D"
+  - "use3D"
+
+
+```
+mol.plot_to_file("my_molecule.png", layout="kamada_kawai")
+```
+
+Fairly standard CPK color scheme is used for plotting, but the specific atom colors, sizes, and bond weights can be adjusted in `MYKit/utilities/mol_display.py` with the `AATOM_COLORS`, `ATOM_SIZES`, `BOND_WEIGHT` dictionaries.
+
+Lastly, interactive 3D plotting is made availible in Jupyter notebooks, as well as writing the raw HTML to file for the interactive widget.
+
+![Example displayed molecule](images/example_3D.png)
+
+Two example notebooks are provided to demonstrate this functionality: 
+  - `MYKit/notebooks/2D_display.ipynb`
+  - `MYKit/notebooks/3D_display.ipynb`
+
+
+## Molecular properties
+
+
+
+
 
 
 

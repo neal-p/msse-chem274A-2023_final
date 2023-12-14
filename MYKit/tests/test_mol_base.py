@@ -37,7 +37,8 @@ cyclo_propane_bonds = [(0, 1, 1), (1, 2, 1), (2, 0, 1)]
 # Write fingerprints once to check consistency between runs
 ###################################################################
 
-# benzene = Mol(benzene_elements, benzene_bonds)
+benzene = Mol(benzene_elements, benzene_bonds)
+print(benzene)
 # toluene = Mol(toluene_elements, toluene_bonds)
 # propane = Mol(propane_elements, propane_bonds)
 # cyclopropane = Mol(cyclo_propane_elements, cyclo_propane_bonds)

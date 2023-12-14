@@ -143,22 +143,22 @@ But, despite this glaring real-world limitation, I did have a lot of fun putting
 
 ## MYKit directory structure
 
-<div>
-.
-ÀÄÄ MYKit/
-    ÃÄÄ bin/
-    ³   ÀÄÄ substructure_search.py
-    ÃÄÄ MYKit/
-    ³   ÀÄÄ utilities
-    ÃÄÄ notebooks/
-    ³   ÃÄÄ substructure_search.ipynb
-    ³   ÃÄÄ 2D_display.ipynb
-    ³   ÀÄÄ 3D_display.ipynb
-    ÃÄÄ tests/
-    ³   ÀÄÄ test_mol_base.py
-    ÃÄÄ Makefile
-    ÀÄÄ environment.yml
-</div>
+```
+MYKit/
+|-- bin/
+|   `-- substructure_search.py
+|-- MYKit/
+|   `-- utilities
+|-- notebooks/
+|   |-- substructure_search.ipynb
+|   |-- 2D_display.ipynb
+|   `-- 3D_display.ipynb
+|-- tests/
+|   `-- test_mol_base.py
+|-- Makefile
+`-- environment.yml
+
+```
 
  - `bin`: provides command line `substructure_search.py` substructure search utility
  - `MYKit`: source directory with main `Mol` class defined in `mol_base.py`
@@ -167,6 +167,8 @@ But, despite this glaring real-world limitation, I did have a lot of fun putting
  - `tests`: tests all of the `Mol` functionalities on a few basic structures
  - `Makefile`: contains target for building the environment `environment`, running tests `test`, and linting `lint`
  - `environment.yml`: specify required packages
+
+
 
 
 

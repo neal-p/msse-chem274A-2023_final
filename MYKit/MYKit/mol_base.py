@@ -60,10 +60,46 @@ class Mol:
                 self.graph, dict(enumerate(map(lambda s: s[2], self.coords))), "z"
             )
 
-        # Initialize ring information
-        self.rings = self.RingPerception()
+    @property
+    def formula(self) -> str:
+        """
+        Return the molecular formula
 
-    def RingPerception(self) -> List[Tuple[int]]:
+        Note, hydrogens are not really handled correctly since we don't have
+        a notion of valency in the Mol class :(
+
+        Returns
+        -------
+        str
+            Molecular formula
+        """
+        element_counts = {}
+        for node, data in self.graph.nodes(data=True):
+            element = data["element"]
+            if element not in element_counts:
+                element_counts[element] = 0
+            element_counts[element] += 1
+
+        formula = ""
+        if "C" in element_counts:
+            formula += "C" + str(element_counts["C"])
+            del element_counts["C"]
+
+        if "N" in element_counts:
+            formula += "N" + str(element_counts["N"])
+            del element_counts["N"]
+
+        if "O" in element_counts:
+            formula += "O" + str(element_counts["O"])
+            del element_counts["O"]
+
+        for element, count in element_counts.items():
+            formula += f"{element }{count}"
+
+        return formula
+
+    @property
+    def rings(self) -> List[Tuple[int]]:
         """
         Use networkx to find the rings in the molecule
 
@@ -77,7 +113,8 @@ class Mol:
         except nx.NetworkXNoCycle:
             return []
 
-    def GetNumRings(self) -> int:
+    @property
+    def numRings(self) -> int:
         """
         Return the number of rings in the molecule
 
@@ -88,7 +125,8 @@ class Mol:
         """
         return len(self.rings)
 
-    def GeRingSizes(self) -> List[int]:
+    @property
+    def ringSizes(self) -> List[int]:
         """
         Return the size of each ring in the molecule
 
@@ -116,9 +154,7 @@ class Mol:
         else:
             name = ""
 
-        return f"Mol {name} with {len(self.graph.nodes)} atoms, \
-            {len(self.graph.edges)} \
-            bonds, and {self.GetNumRings()} rings"
+        return f"Mol {name} with {len(self.graph.nodes)} atoms, {len(self.graph.edges)} bonds, and {self.numRings} rings"
 
     def display(self):
         """
@@ -138,7 +174,7 @@ class Mol:
         """
         DisplayMol(self)
 
-    def plot_to_file(self, file: str, layout: str = "kamada_kawai"):
+    def plot_to_file(self, file: str, layout: str = "infer"):
         """
         Plot the 2D molecule image with networkx
 
@@ -149,7 +185,7 @@ class Mol:
         layout : str, optional
             Which networkx graph layout algorithm to use, by default 'kamada_kawai'
         """
-        DisplayMol(self, file=file)
+        DisplayMol(self, file=file, layout=layout)
 
     def plot_3D_to_file(self, file: str):
         """
@@ -170,29 +206,90 @@ class Mol:
 
         DisplayMol3D(self, file=file)
 
-    def __getAtomNeighborhood(self, atom_idx: int, radius: int = 3):
+    def getAtomNeighborhood(self, atom_idx: int, radius: int = 3) -> List[int]:
+        """
+        Return atoms in radius to the given atom
+
+        Parameters
+        ----------
+        atom_idx : int
+            Center of the neighborhood
+        radius : int
+            The radius of the neighborhood
+
+        Returns
+        ------
+        List[int]
+            List of the atoms in the neighborhood
+        """
+
         return nx.ego_graph(self.graph, atom_idx, radius=radius, undirected=True)
 
-    def __getExhaustivePaths(self, start: int, length: int):
+    def getExhaustivePaths(self, start: int, length: int) -> List[List[int]]:
+        """
+        Get all paths of in the molecular graph of specified length from starting atom
+
+        Parameters
+        ----------
+        start : int
+            Start of paths
+        length : int
+            length of paths
+
+        Returns
+        ------
+        List[List[int]]
+            List of list of atom paths
+        """
+
         if length == 0:
             return [[start]]
 
         paths = []
         for neighbor in self.graph.neighbors(start):
-            for path in self.__getExhaustivePaths(neighbor, length - 1):
+            for path in self.getExhaustivePaths(neighbor, length - 1):
                 if len(path) <= 1 or start != path[1]:
                     paths.append([start] + path)
 
         return paths
 
-    def __getAllExhaustivePaths(self, length: int):
+    def getAllExhaustivePaths(self, length: int) -> List[List[int]]:
+        """
+        Get all paths of in the molecular graph
+
+        Parameters
+        ----------
+        length : int
+            length of paths
+
+        Returns
+        ------
+        List[List[int]]
+            List of list of atom paths from every atom
+        """
+
         paths = []
         for node in self.graph.nodes:
-            paths.extend(self.__getExhaustivePaths(node, length))
+            paths.extend(self.getExhaustivePaths(node, length))
 
         return paths
 
-    def __atomPathToSmi(self, path):
+    def atomPathToSmi(self, path) -> str:
+        """
+        Given a path of atoms, convert to a ~SMILES~ like
+        string with elements and bond orders
+
+        Parameters
+        ----------
+        path : List[int]
+            length of paths
+
+        Returns
+        ------
+        str
+            Elements and bonds between them as a string
+        """
+
         output = [self.graph.nodes[path[0]]["element"]]
         for start, end in zip(path[0:-1], path[1:]):
             output.append(str(self.graph.get_edge_data(start, end)["bond_order"]))
@@ -200,15 +297,38 @@ class Mol:
 
         return "".join(output)
 
-    def fingerprint(self, min_path=2, max_path=7, nBits=2048, bitsPerHash=2):
+    def fingerprint(
+        self, min_path=1, max_path=7, nBits=2048, bitsPerHash=2
+    ) -> np.ndarray:
+        """
+        Calculate molecular fingerprint based on exhaustive walks
+        of the molecular graph of length min_path to max_path
+
+        Parameters
+        ----------
+        min_path : int
+            minimum length of paths
+        max_path : int
+            maximum length of paths
+        nBits : int
+            dimensionality of fingerprint
+        bitsPerHash : int
+            how many bits are to be set for each substructure
+
+        Returns
+        ------
+        np.ndarray
+            Molecular fingerprint
+        """
+
         np_seed_og = np.random.get_state()
 
         fp = np.zeros(2048)
         all_walks = []
         for length in range(min_path, max_path + 1):
-            all_walks.extend(self.__getAllExhaustivePaths(length))
+            all_walks.extend(self.getAllExhaustivePaths(length))
 
-        all_walks = list(map(self.__atomPathToSmi, all_walks))
+        all_walks = list(map(self.atomPathToSmi, all_walks))
 
         for walk in all_walks:
             # need deterministic hash
@@ -224,39 +344,6 @@ class Mol:
 
         np.random.set_state(np_seed_og)
         return fp
-
-    @property
-    def formula(self) -> str:
-        """
-        Return the molecular formula
-
-        Note, hydrogens are not really handled correctly since we don't have
-        a notion of valency in the Mol class :(
-        """
-        element_counts = {}
-        for node, data in self.graph.nodes(data=true):
-            element = data["element"]
-            if element not in element_counts:
-                element_counts[element] = 0
-            element_counts[element] += 1
-
-        formula = ""
-        if "C" in element_counts:
-            formula += "C" + element_counts["C"]
-            del element_counts["C"]
-
-        if "N" in element_counts:
-            formula += "N" + element_counts["N"]
-            del element_counts["N"]
-
-        if "O" in element_counts:
-            formula += "O" + element_counts["O"]
-            del element_counts["O"]
-
-        for element, count in element_counts.items():
-            formula += f"{element }{count}"
-
-        return formula
 
     def __eq__(self, other, **kwargs) -> bool:
         """
@@ -274,9 +361,28 @@ class Mol:
 
     def hasSubstructMatch(self, substructure, **kwargs) -> bool:
         """
-        Use fingerprint to determine if the given substructure is present in the molecule
+        Test for presence of a substructure in the current molecule
 
+        This searches for the fingerprint bits set by the substructure in the
+        fingerprint of the current molecule. As a result, this will always
+        produce true negatives, but may also produce false positives.
+
+        The kwargs are passed on to the fingerprint method.
+
+        Parameters
+        ----------
+        substructure : Mol
+            Query structure
+
+        kwargs : Dict
+            Arguments passed to fingerprint method
+
+        Returns
+        -------
+        bool
+            Whether the substructure is present
         """
+
         onbits = np.nonzero(substructure.fingerprint(**kwargs))[0]
         fp = self.fingerprint(**kwargs)
         for bit in onbits:

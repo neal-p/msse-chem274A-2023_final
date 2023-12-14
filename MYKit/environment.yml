@@ -1,0 +1,15 @@
+name: 274A_final
+channels:
+  - defaults
+dependencies:
+  - python >= 3.8
+  - pytest
+  - networkx
+  - pandas
+  - matplotlib
+  - plotly
+  - numpy
+  - ipykernel
+  - black
+  - flake8
+  - pip

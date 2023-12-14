@@ -133,3 +133,41 @@ Output of the test is provided in `Matrix/bin/test_matrix.txt`
 
 # Python: MYKit, a want to be RDKit
 
+I use RDKit every day for work and have a few times tried to hand-roll my own RDKit functionalities, all attempts have ended with the upmost appriciation for the authors of the RDKit code. Modelling molecules is really difficult to do well, but here I attempted to provide some of the simplest functionalities of a cheminformatics software package. 
+
+## General Design
+
+The `Mol` object is the molecule container class in MYKit. This object represents a molecule graph, which is internally implemented as a `NetworkX` graph. Unfortunately, this basic graph structure lacks the chemistry awareness that RDKit provides, not being able to detect aromaticity, correct valences, radicals, invalid structures, or implicit hydrogens. I briefly went down the route of putting in some very basic heuristics based on the number of valence electrons of an atom knowing how many bonds it should form, etc. But, to do so properly quickly became out of scope for this project. 
+
+But, despite this glaring real-world limitation, I did have a lot of fun putting together the class and especially had some fun extending to 3D plotting.
+
+## MYKit directory structure
+
+<div>
+.
+ÀÄÄ MYKit/
+    ÃÄÄ bin/
+    ³   ÀÄÄ substructure_search.py
+    ÃÄÄ MYKit/
+    ³   ÀÄÄ utilities
+    ÃÄÄ notebooks/
+    ³   ÃÄÄ substructure_search.ipynb
+    ³   ÃÄÄ 2D_display.ipynb
+    ³   ÀÄÄ 3D_display.ipynb
+    ÃÄÄ tests/
+    ³   ÀÄÄ test_mol_base.py
+    ÃÄÄ Makefile
+    ÀÄÄ environment.yml
+</div>
+
+ - `bin`: provides command line `substructure_search.py` substructure search utility
+ - `MYKit`: source directory with main `Mol` class defined in `mol_base.py`
+ - `MYKit/utilities`: contains periodic table, display, and SDF parsing logic
+ - `notebooks`: provides notebooks showaseing the substructure search and molecule display
+ - `tests`: tests all of the `Mol` functionalities on a few basic structures
+ - `Makefile`: contains target for building the environment `environment`, running tests `test`, and linting `lint`
+ - `environment.yml`: specify required packages
+
+
+
+
